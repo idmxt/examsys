@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Оценка студентов (с аналитикой)</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-light p-4">
+    <div class="container">
+      <!-- Кнопка сброса и кнопка аналитики -->
+      <div class="mb-4">
+        <button class="btn btn-danger me-2" id="reset-all-btn">
+          Сбросить все данные
+        </button>
+        <button class="btn btn-info" id="show-analytics-btn">Аналитика</button>
+      </div>
+
+      <!-- Главная страница -->
+      <div id="main-page">
+        <h1 class="mb-4">Список групп</h1>
+
+        <!-- Импорт билетов -->
+        <div class="mb-3">
+          <label for="tickets-files" class="form-label"
+            >Выберите файлы билетов (Excel)</label
+          >
+          <input
+            type="file"
+            id="tickets-files"
+            class="form-control"
+            accept=".xlsx, .xls"
+            multiple
+          />
+        </div>
+        <button class="btn btn-warning mb-4" id="import-tickets-btn">
+          Импортировать билеты
+        </button>
+
+        <!-- Список групп -->
+        <div class="row" id="group-list">
+          <!-- Будет генерироваться из JS -->
+        </div>
+      </div>
+
+      <!-- Страница группы -->
+      <div id="group-page" class="d-none">
+        <button class="btn btn-secondary mb-3" id="back-to-main-btn">
+          Вернуться на главную
+        </button>
+        <h2 id="group-title" class="mb-4"></h2>
+
+        <!-- Импорт студентов -->
+        <div class="mb-3">
+          <label for="csv-file" class="form-label"
+            >Файл со студентами (Excel)</label
+          >
+          <input
+            type="file"
+            id="csv-file"
+            class="form-control"
+            accept=".xlsx, .xls"
+          />
+        </div>
+        <button class="btn btn-info mb-3" id="import-group-btn">
+          Импортировать студентов из Excel
+        </button>
+
+        <!-- Поля для поиска/фильтра/сортировки -->
+        <div class="row mb-3">
+          <div class="col-md-4 mb-2">
+            <label for="search-student" class="form-label">Поиск по ФИО:</label>
+            <input
+              type="text"
+              id="search-student"
+              class="form-control"
+              placeholder="Введите часть имени..."
+            />
+          </div>
+          <div class="col-md-4 mb-2">
+            <label for="min-points" class="form-label"
+              >Минимальные баллы:</label
+            >
+            <input
+              type="number"
+              id="min-points"
+              class="form-control"
+              placeholder="0"
+            />
+          </div>
+          <div class="col-md-4 mb-2">
+            <label for="sort-field" class="form-label">Сортировка:</label>
+            <select id="sort-field" class="form-select">
+              <option value="name-asc">Имя (А–Я)</option>
+              <option value="name-desc">Имя (Я–А)</option>
+              <option value="points-asc">Баллы (возрастание)</option>
+              <option value="points-desc">Баллы (убывание)</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary mb-4" id="filter-btn">
+          Применить фильтр/сортировку
+        </button>
+
+        <!-- Список студентов (аккордеон) -->
+        <div id="student-list" class="mt-4">
+          <!-- Будет генерироваться JS -->
+        </div>
+
+        <!-- Кнопки экспорта -->
+        <button class="btn btn-success mt-4 me-2" id="export-group-btn">
+          Экспортировать группу в Excel
+        </button>
+        <button class="btn btn-dark mt-4" id="detailed-export-btn">
+          Подробный экспорт (билеты отдельно)
+        </button>
+      </div>
+
+      <!-- Страница аналитики (скрытая) -->
+      <div id="analytics-page" class="d-none container mt-5">
+        <button class="btn btn-secondary mb-3" id="back-to-main-from-analytics">
+          Вернуться
+        </button>
+        <h2>Аналитика по группам и билетам</h2>
+
+        <!-- Форма выбора группы для экспорта -->
+        <div class="row mt-4">
+          <div class="col-md-4">
+            <label for="export-group-select" class="form-label"
+              >Выберите группу для экспорта в PDF:</label
+            >
+            <select id="export-group-select" class="form-select">
+              <option value="" disabled selected>-- Выберите группу --</option>
+              ${groupNames.map(group => `
+              <option value="${group}">${group}</option>
+              `).join('')}
+            </select>
+          </div>
+          <div class="col-md-4 align-self-end">
+            <button class="btn btn-primary" id="export-pdf-btn">
+              Экспортировать в PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- 1) Средний балл по каждой группе -->
+        <div class="mt-4" id="analytics-content">
+          <h4>Средний балл по группам</h4>
+          <canvas id="chart-group-avg" width="600" height="300"></canvas>
+        </div>
+
+        <!-- 2) Распределение баллов по последней открытой группе -->
+        <div class="mt-4">
+          <h4>Распределение баллов (последняя открытая группа)</h4>
+          <canvas id="chart-distribution" width="600" height="300"></canvas>
+        </div>
+
+        <!-- 3) Статистика по билетам -->
+        <div class="mt-4">
+          <h4>Статистика по билетам</h4>
+          <div id="tickets-stats">
+            <!-- Статистика будет генерироваться JS -->
+          </div>
+        </div>
+
+        <!-- 4) Общее количество студентов по группам -->
+        <div class="mt-4">
+          <h4>Количество студентов по группам</h4>
+          <canvas id="chart-group-count" width="600" height="300"></canvas>
+        </div>
+
+        <!-- 5) Самые активные студенты (с наибольшими баллами) -->
+        <div class="mt-4">
+          <h4>Самые активные студенты</h4>
+          <canvas id="chart-top-students" width="600" height="300"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модальное окно для оценки -->
+    <div
+      class="modal fade"
+      id="gradeModal"
+      tabindex="-1"
+      aria-labelledby="gradeModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="gradeModalLabel">Оценка студента</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Закрыть"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <h4 id="modal-student-name"></h4>
+            <div class="mb-3">
+              <label for="ticket-select" class="form-label"
+                >Выберите билет</label
+              >
+              <select
+                class="form-select"
+                id="ticket-select"
+                onchange="applyTicketCriteria()"
+              >
+                <!-- Список билетов будет добавлен динамически -->
+              </select>
+            </div>
+            <table class="table table-bordered">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Критерий</th>
+                  <th>Макс. баллы</th>
+                  <th>Факт (Да/Нет)</th>
+                  <th>Итог</th>
+                </tr>
+              </thead>
+              <tbody id="criteria-table"></tbody>
+            </table>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Закрыть
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="saveGrades()"
+            >
+              Сохранить
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Подключение Bootstrap, SheetJS, Chart.js, jsPDF и html2canvas -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Подключение нашего скрипта -->
+    <script src="/public/script.js"></script>
+  </body>
+</html>

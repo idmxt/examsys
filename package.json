@@ -1,0 +1,12 @@
+{
+  "name": "student-analytics",
+  "version": "1.0.0",
+  "description": "Статический сайт с аналитикой студентов, готовы к деплою на Render.com",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
